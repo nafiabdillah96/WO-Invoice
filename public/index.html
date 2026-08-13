@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berkas & Berkah — Sistem Invoice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,450;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#F7F3EC; --ivory-soft:#EFE7DC; --ink:#2B2420; --ink-soft:#6B6258;
+    --wine:#7A2635; --wine-deep:#5C1C28; --sage:#7C8B6F; --gold-line: rgba(176,141,87,0.4);
+    --card:#FFFFFF; --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ivory); color:var(--ink); font-family:'Public Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.display{ font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em; }
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex-shrink:0; background:var(--wine-deep); color:#F2E4E1; padding:28px 20px; display:flex; flex-direction:column; gap:6px; }
+  .brand{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; color:#fff; margin-bottom:4px; }
+  .brand-sub{ font-size:11px; color:#D8B9BC; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:28px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius); font-size:14px; color:#EBD8D6; cursor:pointer; border-left:2px solid transparent; transition:background .15s ease, border-color .15s ease; }
+  .nav-item:hover{ background:rgba(255,255,255,0.06); }
+  .nav-item.active{ background:rgba(255,255,255,0.09); border-left:2px solid #D8B9BC; color:#fff; font-weight:500; }
+  .nav-num{ font-family:'IBM Plex Mono', monospace; font-size:10px; opacity:0.6; width:16px;}
+  .sidebar-foot{ margin-top:auto; font-size:11px; color:#B98D93; border-top:1px solid rgba(255,255,255,0.12); padding-top:14px; }
+  .main{ flex:1; padding:32px 40px 60px; max-width:1180px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; gap:16px; flex-wrap:wrap;}
+  .page-eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; color:var(--wine); margin-bottom:6px; font-weight:600; }
+  .page-title{ font-size:28px; margin:0; }
+  .page-sub{ font-size:13px; color:var(--ink-soft); margin-top:6px; }
+  .btn{ font-family:'Public Sans', sans-serif; font-size:13px; font-weight:600; padding:10px 18px; border-radius:var(--radius); border:1px solid var(--wine); background:var(--wine); color:#fff; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn:hover{ background:var(--wine-deep); }
+  .btn.secondary{ background:transparent; color:var(--wine); }
+  .btn.secondary:hover{ background:#FBF0EF; }
+  .btn.ghost{ background:transparent; border-color:var(--gold-line); color:var(--ink-soft); }
+  .btn.ghost:hover{ border-color:var(--wine); color:var(--wine); }
+  .btn.danger{ background:transparent; border-color:#c96; color:#9C3B32; }
+  .card{ background:var(--card); border:1px solid var(--gold-line); border-radius:var(--radius); padding:22px; }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:26px; }
+  .stat-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); margin-bottom:8px;}
+  .stat-value{ font-family:'Fraunces', serif; font-size:28px; font-weight:600; }
+  .stat-delta{ font-size:12px; color:var(--sage); margin-top:6px; }
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--gold-line); }
+  td{ padding:14px 12px; font-size:13.5px; border-bottom:1px solid #EFE7DC; vertical-align:middle; }
+  tr:hover td{ background:#FBF8F3; }
+  .row-name{ font-weight:600; cursor:pointer; }
+  .row-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .seal{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:5px 11px; border-radius:20px; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap;}
+  .seal::before{ content:''; width:6px; height:6px; border-radius:50%; }
+  .seal.lunas{ background:#EAF0E5; color:#4C5C3F; } .seal.lunas::before{ background:#7C8B6F; }
+  .seal.dp{ background:#F4EAD9; color:#8A6A2F; } .seal.dp::before{ background:#C79A45; }
+  .seal.draft{ background:#EFEAE3; color:#6B6258; } .seal.draft::before{ background:#A39C90; }
+  .seal.terkirim{ background:#E7EEF2; color:#3E6274; } .seal.terkirim::before{ background:#6E9AAC; }
+  .seal.jatuh_tempo{ background:#F5E1DF; color:#9C3B32; } .seal.jatuh_tempo::before{ background:#B44234; }
+  .section-title{ font-size:15px; margin:0 0 14px; display:flex; align-items:center; gap:10px;}
+  .section-title .line{ flex:1; height:1px; background:var(--gold-line); }
+  .chip{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:var(--ivory-soft); color:var(--wine); font-family:'Fraunces', serif; font-weight:600; font-size:13px; margin-right:10px; flex-shrink:0;}
+  .flex-mid{ display:flex; align-items:center; }
+  .empty{ padding:40px 20px; text-align:center; color:var(--ink-soft); font-size:13.5px; }
+  .empty .display{ font-size:18px; color:var(--ink); margin-bottom:6px; }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:22px;}
+  .field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field select, .field textarea{ width:100%; padding:10px 12px; border:1px solid var(--gold-line); border-radius:var(--radius); font-family:'Public Sans',sans-serif; font-size:13.5px; background:#fff; color:var(--ink); }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .item-table th, .item-table td{ font-size:13px; padding:8px 8px;}
+  .item-table input, .item-table select{ border:1px solid transparent; border-bottom:1px dashed var(--gold-line); background:transparent; font-family:'Public Sans',sans-serif; font-size:13px; padding:6px 4px; width:100%; }
+  .item-table input:focus, .item-table select:focus{ outline:none; border-bottom-color:var(--wine); }
+  .item-table input.qty-input{ text-align:center; }
+  .del-x{ color:var(--ink-soft); cursor:pointer; text-align:center; font-size:14px; }
+  .del-x:hover{ color:#9C3B32; }
+  .add-item-row{ padding:12px; text-align:center; border:1px dashed var(--gold-line); border-radius:var(--radius); color:var(--wine); font-size:13px; font-weight:600; cursor:pointer; margin-top:10px;}
+  .add-item-row:hover{ background:#FBF0EF; }
+  .totals{ margin-left:auto; width:300px; margin-top:18px; }
+  .totals-row{ display:flex; justify-content:space-between; align-items:center; font-size:13.5px; padding:8px 0; border-bottom:1px solid #EFE7DC; gap:10px;}
+  .totals-row input{ width:130px; text-align:right; padding:6px 8px; border:1px solid var(--gold-line); border-radius:var(--radius); font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  .totals-row.grand{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; border-bottom:none; padding-top:14px; }
+  .paper{ background:var(--card); border:1px solid var(--gold-line); position:relative; padding:36px 40px; }
+  .paper::before{ content:''; position:absolute; top:0; left:0; right:0; height:5px; background: repeating-linear-gradient(90deg, var(--wine) 0 10px, transparent 10px 18px); opacity:0.55; }
+  .paper-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px;}
+  .invoice-no{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  .wax{ width:78px; height:78px; border-radius:50%; background: radial-gradient(circle at 35% 30%, #9C3546, var(--wine-deep)); color:#F2E4E1; display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-size:11px; font-weight:700; text-transform:uppercase; transform:rotate(8deg); text-align:center; line-height:1.25; letter-spacing:0.03em; box-shadow:0 3px 8px rgba(92,28,40,0.35); padding:6px;}
+  .paper-cols{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:26px;}
+  .paper-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); margin-bottom:4px;}
+  .paper-val{ font-size:14px; font-weight:500;}
+  .timeline{ margin-top:8px; }
+  .tl-item{ display:flex; gap:14px; padding:12px 0; border-bottom:1px solid #EFE7DC; align-items:flex-start;}
+  .tl-dot{ width:9px; height:9px; border-radius:50%; background:var(--sage); margin-top:5px; flex-shrink:0;}
+  .tl-item.pending .tl-dot{ background:#D8CFC2; }
+  .tl-title{ font-size:13.5px; font-weight:600; }
+  .tl-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .tl-amount{ margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:13px; white-space:nowrap;}
+  .note{ margin-top:20px; font-size:12.5px; color:var(--ink-soft); background:var(--ivory-soft); border-radius:var(--radius); padding:12px 14px; }
+  .page{ display:none; } .page.active{ display:block; }
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(43,36,32,0.45); align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-overlay.active{ display:flex; }
+  .modal{ background:#fff; border-radius:var(--radius); width:100%; max-width:480px; padding:26px; max-height:88vh; overflow-y:auto; }
+  .modal h3{ margin:0 0 18px; font-size:19px; }
+  .modal .field{ margin-bottom:14px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-scroll table{ min-width:560px; }
+  .table-scroll table.item-table{ min-width:640px; }
+
+  /* ---- Bottom nav (mobile) ---- */
+  .bottom-nav{
+    display:none;
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    background:var(--wine-deep);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(43,36,32,0.18);
+  }
+  .bottom-nav-inner{ display:flex; }
+  .bn-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:6px 2px; color:#C9A6AA; font-size:10px; font-weight:600;
+    border-radius:var(--radius); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .bn-item svg{ width:21px; height:21px; stroke:#C9A6AA; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .bn-item.active{ color:#fff; }
+  .bn-item.active svg{ stroke:#fff; }
+
+  @media (max-width: 768px){
+    .sidebar{ display:none; }
+    .main{ max-width:100%; padding:20px 16px calc(80px + env(safe-area-inset-bottom)); }
+    .bottom-nav{ display:block; }
+    .topbar{ flex-direction:column; align-items:stretch; }
+    .topbar .btn, .topbar a.btn{ width:100%; text-align:center; }
+    .topbar > div[style*="display:flex"]{ flex-direction:column; }
+    .grid-3{ grid-template-columns:1fr; }
+    .form-grid{ grid-template-columns:1fr; }
+    .totals{ width:100%; }
+    .paper{ padding:22px 16px; }
+    .paper-cols{ grid-template-columns:1fr; }
+    .card{ padding:16px; }
+    .modal{ max-width:100%; }
+  }
+  ::selection{ background:var(--wine); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand" id="sidebar-brand">Berkas &amp; Berkah</div>
+    <div class="brand-sub">Sistem Invoice WO</div>
+    <div class="nav-item" data-page="dashboard" onclick="goToPage('dashboard')"><span class="nav-num">01</span> Dashboard</div>
+    <div class="nav-item" data-page="clients" onclick="goToPage('clients')"><span class="nav-num">02</span> Klien</div>
+    <div class="nav-item" data-page="services" onclick="goToPage('services')"><span class="nav-num">03</span> Layanan</div>
+    <div class="nav-item" data-page="invoices" onclick="goToPage('invoices')"><span class="nav-num">04</span> Invoice</div>
+    <div class="nav-item" data-page="settings" onclick="goToPage('settings')"><span class="nav-num">05</span> Pengaturan</div>
+    <div class="sidebar-foot" id="sidebar-status">Menghubungkan ke server…</div>
+  </div>
+  <div class="main" id="main-content">
+    <div class="empty">Memuat data dari server…</div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <div class="bn-item" data-page="dashboard" onclick="goToPage('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      <span>Dashboard</span>
+    </div>
+    <div class="bn-item" data-page="clients" onclick="goToPage('clients')">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.5 14.3c2.6.3 4.5 2.6 4.5 5.4"/></svg>
+      <span>Klien</span>
+    </div>
+    <div class="bn-item" data-page="services" onclick="goToPage('services')">
+      <svg viewBox="0 0 24 24"><path d="M11 3h6a2 2 0 0 1 2 2v6L10 20 3 13 11 3Z"/><circle cx="14.3" cy="7.7" r="1.3"/></svg>
+      <span>Layanan</span>
+    </div>
+    <div class="bn-item" data-page="invoices" onclick="goToPage('invoices')">
+      <svg viewBox="0 0 24 24"><path d="M6 2.5h9l3 3v16H6z"/><path d="M15 2.5v3h3"/><path d="M8.5 12h7M8.5 15.5h7M8.5 8.5h4"/></svg>
+      <span>Invoice</span>
+    </div>
+    <div class="bn-item" data-page="settings" onclick="goToPage('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4M17.7 17.7l-1.4-1.4M7.7 7.7 6.3 6.3"/></svg>
+      <span>Atur</span>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+let state = null;
+
+function uidLocal(){ return 'tmp_' + Date.now().toString(36); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function formatRupiah(n){ n = Math.round(n||0); return 'Rp ' + n.toLocaleString('id-ID'); }
+function formatNumberID(n){ return Math.round(n||0).toLocaleString('id-ID'); }
+function parseRupiah(str){ const digits = String(str||'').replace(/[^\d]/g,''); return digits ? parseInt(digits,10) : 0; }
+// Dipasang lewat oninput pada field nominal (harga, diskon, jumlah bayar) —
+// otomatis kasih titik ribuan saat diketik, tapi nilai aslinya (tanpa titik)
+// tetap bisa diambil balik lewat parseRupiah().
+function formatRupiahInput(el){ const raw = parseRupiah(el.value); el.value = raw ? formatNumberID(raw) : ''; }
+function formatDateID(iso){ if(!iso) return '-'; return new Date(iso+'T00:00:00').toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' }); }
+function daysUntil(iso){
+  const today = new Date(todayISO()+'T00:00:00');
+  const target = new Date(iso+'T00:00:00');
+  return Math.round((target-today)/(1000*60*60*24));
+}
+
+/* ===================== API LAYER ===================== */
+async function apiFetch(url, options){
+  const res = await fetch(url, options);
+  let body = null;
+  try{ body = await res.json(); }catch(e){ /* no body */ }
+  if(!res.ok) throw new Error((body && body.error) || 'Terjadi kesalahan pada server');
+  return body;
+}
+
+async function loadData(){
+  const prevPage = state ? state.currentPage : 'dashboard';
+  const prevViewing = state ? state.viewingInvoiceId : null;
+  const prevEditing = state ? state.editingInvoiceId : null;
+  try{
+    const data = await apiFetch('/api/bootstrap');
+    state = {
+      clients: data.clients.map(c => ({ id:c.id, nama:c.nama, hp:c.hp, email:c.email, tanggalAcara:c.tanggal_acara, venue:c.venue, catatan:c.catatan })),
+      services: data.services.map(s => ({ id:s.id, nama:s.nama, kategori:s.kategori, harga:s.harga, satuan:s.satuan })),
+      invoices: data.invoices.map(inv => ({
+        id:inv.id, no:inv.no, clientId:inv.client_id, tanggalTerbit:inv.tanggal_terbit, dueDate:inv.due_date,
+        sent: !!inv.sent, diskon:inv.diskon, pajakPersen:inv.pajak_persen,
+        items: inv.items.map(it => ({ id:it.id, deskripsi:it.deskripsi, qty:it.qty, harga:it.harga }))
+      })),
+      payments: data.payments.map(p => ({ id:p.id, invoiceId:p.invoice_id, tanggal:p.tanggal, jumlah:p.jumlah, jenis:p.jenis, metode:p.metode })),
+      settings: { namaUsaha: (data.settings && data.settings.nama_usaha) || 'Nama Usaha Anda', logoUrl: (data.settings && data.settings.logo_url) || '' },
+      currentPage: prevPage, viewingInvoiceId: prevViewing, editingInvoiceId: prevEditing
+    };
+    document.getElementById('sidebar-status').textContent = 'Tersambung ke database.';
+    document.getElementById('sidebar-brand').textContent = state.settings.namaUsaha;
+    render();
+  }catch(e){
+    document.getElementById('sidebar-status').textContent = 'Gagal terhubung ke server.';
+    document.getElementById('main-content').innerHTML = `<div class="empty"><div class="display">Tidak bisa memuat data</div>Pastikan server backend sedang berjalan (npm start), lalu muat ulang halaman ini.</div>`;
+  }
+}
+
+/* ===================== HELPERS ===================== */
+function getClient(id){ return state.clients.find(c=>c.id===id); }
+function getInvoiceTotal(inv){
+  const subtotal = inv.items.reduce((sum,it)=>sum + it.qty*it.harga, 0);
+  const pajak = subtotal * (inv.pajakPersen||0) / 100;
+  const total = subtotal - (inv.diskon||0) + pajak;
+  return { subtotal, pajak, total };
+}
+function getInvoicePaid(invId){ return state.payments.filter(p=>p.invoiceId===invId).reduce((s,p)=>s+p.jumlah,0); }
+function getInvoiceStatus(inv){
+  if(!inv.sent) return 'draft';
+  const { total } = getInvoiceTotal(inv);
+  const paid = getInvoicePaid(inv.id);
+  const overdue = daysUntil(inv.dueDate) < 0;
+  if(paid >= total && total > 0) return 'lunas';
+  if(paid > 0) return overdue ? 'jatuh_tempo' : 'dp';
+  return overdue ? 'jatuh_tempo' : 'terkirim';
+}
+const STATUS_LABEL = { draft:'Draft', terkirim:'Terkirim', dp:'DP Terbayar', lunas:'Lunas', jatuh_tempo:'Jatuh Tempo' };
+function statusSeal(status){ return `<span class="seal ${status}">${STATUS_LABEL[status]}</span>`; }
+function initials(name){ return name.split(/[&\s]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+/* ===================== NAVIGATION ===================== */
+function goToPage(page, param){
+  state.currentPage = page;
+  if(page==='invoice-detail') state.viewingInvoiceId = param;
+  if(page==='invoice-form') state.editingInvoiceId = param || null;
+  render();
+  window.scrollTo(0,0);
+}
+function render(){
+  document.getElementById('sidebar-brand').textContent = (state.settings && state.settings.namaUsaha) || 'Nama Usaha Anda';
+  const isInvoiceFlow = state.currentPage==='invoice-detail' || state.currentPage==='invoice-form';
+  document.querySelectorAll('.nav-item, .bn-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.page === state.currentPage || (n.dataset.page==='invoices' && isInvoiceFlow));
+  });
+  const main = document.getElementById('main-content');
+  if(state.currentPage==='dashboard') main.innerHTML = renderDashboard();
+  else if(state.currentPage==='clients') main.innerHTML = renderClients();
+  else if(state.currentPage==='services') main.innerHTML = renderServices();
+  else if(state.currentPage==='invoices') main.innerHTML = renderInvoicesList();
+  else if(state.currentPage==='invoice-form') main.innerHTML = renderInvoiceForm(state.editingInvoiceId);
+  else if(state.currentPage==='invoice-detail') main.innerHTML = renderInvoiceDetail(state.viewingInvoiceId);
+  else if(state.currentPage==='settings') main.innerHTML = renderSettings();
+}
+
+/* ===================== DASHBOARD ===================== */
+function renderDashboard(){
+  const now = new Date();
+  const pendapatanBulanIni = state.payments
+    .filter(p=>{ const d=new Date(p.tanggal+'T00:00:00'); return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear(); })
+    .reduce((s,p)=>s+p.jumlah,0);
+  let belumTerbayar = 0, jatuhTempoMingguIni = 0;
+  state.invoices.forEach(inv=>{
+    const status = getInvoiceStatus(inv);
+    const { total } = getInvoiceTotal(inv);
+    const paid = getInvoicePaid(inv.id);
+    if(status!=='draft' && status!=='lunas') belumTerbayar += (total-paid);
+    if(status!=='draft' && status!=='lunas'){ const d = daysUntil(inv.dueDate); if(d>=0 && d<=7) jatuhTempoMingguIni++; }
+  });
+  const recent = [...state.invoices].sort((a,b)=> b.tanggalTerbit.localeCompare(a.tanggalTerbit)).slice(0,5);
+  const rows = recent.map(inv=>{
+    const client = getClient(inv.clientId);
+    const { total } = getInvoiceTotal(inv);
+    const status = getInvoiceStatus(inv);
+    return `<tr onclick="goToPage('invoice-detail','${inv.id}')" style="cursor:pointer;">
+      <td><div class="flex-mid"><span class="chip">${initials(client?client.nama:'?')}</span><div><div class="row-name">${client?client.nama:'—'}</div><div class="row-sub mono">${inv.no}</div></div></div></td>
+      <td>${client?formatDateID(client.tanggalAcara)+' · '+client.venue:'—'}</td>
+      <td class="mono">${formatRupiah(total)}</td>
+      <td>${statusSeal(status)}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="topbar">
+      <div><div class="page-eyebrow">Ringkasan</div><h1 class="page-title">Dashboard</h1><div class="page-sub">${state.invoices.length} invoice tercatat · ${state.clients.length} klien</div></div>
+      <button class="btn" onclick="goToPage('invoice-form', null)">+ Invoice Baru</button>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="stat-label">Pendapatan Bulan Ini</div><div class="stat-value">${formatRupiah(pendapatanBulanIni)}</div><div class="stat-delta">dari pembayaran yang tercatat</div></div>
+      <div class="card"><div class="stat-label">Belum Terbayar</div><div class="stat-value">${formatRupiah(belumTerbayar)}</div><div class="stat-delta" style="color:#9C3B32;">di seluruh invoice aktif</div></div>
+      <div class="card"><div class="stat-label">Jatuh Tempo 7 Hari</div><div class="stat-value">${jatuhTempoMingguIni}</div><div class="stat-delta" style="color:#8A6A2F;">segera kirim pengingat</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Invoice Terbaru <div class="line"></div></div>
+      ${ rows ? `<div class="table-scroll"><table><thead><tr><th>Klien</th><th>Acara</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><div class="display">Belum ada invoice</div>Buat invoice pertama untuk mulai mencatat.</div>` }
+    </div>`;
+}
+
+/* ===================== CLIENTS ===================== */
+function renderClients(){
+  const rows = state.clients.map(c=>{
+    const invCount = state.invoices.filter(i=>i.clientId===c.id).length;
+    return `<tr>
+      <td><div class="flex-mid" onclick="openClientModal('${c.id}')" style="cursor:pointer;"><span class="chip">${initials(c.nama)}</span><div class="row-name">${c.nama}</div></div></td>
+      <td>${c.hp||'-'}</td><td>${formatDateID(c.tanggalAcara)}</td><td>${c.venue||'-'}</td><td>${invCount} invoice</td>
+      <td style="text-align:right;"><button class="btn ghost" onclick="openClientModal('${c.id}')">Edit</button> <button class="btn danger" onclick="deleteClient('${c.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="topbar"><div><div class="page-eyebrow">Data Klien</div><h1 class="page-title">Klien</h1><div class="page-sub">${state.clients.length} pasangan tercatat</div></div>
+      <button class="btn" onclick="openClientModal(null)">+ Klien Baru</button></div>
+    <div class="card">${ rows ? `<div class="table-scroll"><table><thead><tr><th>Nama</th><th>Kontak</th><th>Tanggal Acara</th><th>Venue</th><th>Invoice</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><div class="display">Belum ada klien</div>Tambahkan klien pertama Anda.</div>` }</div>`;
+}
+function openClientModal(id){
+  const c = id ? getClient(id) : { nama:'', hp:'', email:'', tanggalAcara:'', venue:'', catatan:'' };
+  document.getElementById('modal-content').innerHTML = `
+    <h3>${id?'Edit Klien':'Klien Baru'}</h3>
+    <div class="field"><label>Nama Klien</label><input id="f-nama" value="${c.nama}" placeholder="Rani & Ardi"></div>
+    <div class="field"><label>No. HP</label><input id="f-hp" value="${c.hp||''}" placeholder="0812-0000-0000"></div>
+    <div class="field"><label>Email</label><input id="f-email" value="${c.email||''}" placeholder="nama@email.com"></div>
+    <div class="field"><label>Tanggal Acara</label><input id="f-tanggal" type="date" value="${c.tanggalAcara||''}"></div>
+    <div class="field"><label>Venue</label><input id="f-venue" value="${c.venue||''}" placeholder="Nama gedung / lokasi"></div>
+    <div class="field"><label>Catatan</label><textarea id="f-catatan">${c.catatan||''}</textarea></div>
+    <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Batal</button><button class="btn" onclick="saveClient('${id||''}')">Simpan</button></div>`;
+  openModal();
+}
+async function saveClient(id){
+  const data = {
+    nama: document.getElementById('f-nama').value.trim(),
+    hp: document.getElementById('f-hp').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    tanggalAcara: document.getElementById('f-tanggal').value,
+    venue: document.getElementById('f-venue').value.trim(),
+    catatan: document.getElementById('f-catatan').value.trim(),
+  };
+  if(!data.nama){ alert('Nama klien wajib diisi'); return; }
+  try{
+    if(id) await apiFetch(`/api/clients/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    else await apiFetch('/api/clients', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    closeModal();
+    await loadData();
+  }catch(e){ alert(e.message); }
+}
+async function deleteClient(id){
+  if(!confirm('Hapus klien ini?')) return;
+  try{ await apiFetch(`/api/clients/${id}`, { method:'DELETE' }); await loadData(); }
+  catch(e){ alert(e.message); }
+}
+
+/* ===================== SERVICES ===================== */
+function renderServices(){
+  const rows = state.services.map(s=>`
+    <tr><td class="row-name">${s.nama}</td><td>${s.kategori}</td><td class="mono">${formatRupiah(s.harga)}</td><td>${s.satuan}</td>
+      <td style="text-align:right;"><button class="btn ghost" onclick="openServiceModal('${s.id}')">Edit</button> <button class="btn danger" onclick="deleteService('${s.id}')">Hapus</button></td></tr>`).join('');
+  return `
+    <div class="topbar"><div><div class="page-eyebrow">Master Data</div><h1 class="page-title">Layanan</h1><div class="page-sub">Item yang bisa dipakai ulang saat membuat invoice</div></div>
+      <button class="btn" onclick="openServiceModal(null)">+ Layanan Baru</button></div>
+    <div class="card">${ rows ? `<div class="table-scroll"><table><thead><tr><th>Layanan</th><th>Kategori</th><th>Harga Default</th><th>Satuan</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><div class="display">Belum ada layanan</div>Tambahkan paket/item layanan yang sering dipakai.</div>` }</div>`;
+}
+function openServiceModal(id){
+  const s = id ? state.services.find(x=>x.id===id) : { nama:'', kategori:'', harga:0, satuan:'paket' };
+  document.getElementById('modal-content').innerHTML = `
+    <h3>${id?'Edit Layanan':'Layanan Baru'}</h3>
+    <div class="field"><label>Nama Layanan</label><input id="f-nama" value="${s.nama}" placeholder="Dekorasi Pelaminan Klasik"></div>
+    <div class="field"><label>Kategori</label><input id="f-kategori" value="${s.kategori}" placeholder="Dekorasi / Catering / MUA / dll"></div>
+    <div class="field"><label>Harga Default (Rp)</label><input id="f-harga" type="text" inputmode="numeric" value="${formatNumberID(s.harga)}" oninput="formatRupiahInput(this)"></div>
+    <div class="field"><label>Satuan</label><input id="f-satuan" value="${s.satuan}" placeholder="paket / per pax / jam"></div>
+    <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Batal</button><button class="btn" onclick="saveService('${id||''}')">Simpan</button></div>`;
+  openModal();
+}
+async function saveService(id){
+  const data = {
+    nama: document.getElementById('f-nama').value.trim(),
+    kategori: document.getElementById('f-kategori').value.trim(),
+    harga: parseRupiah(document.getElementById('f-harga').value),
+    satuan: document.getElementById('f-satuan').value.trim(),
+  };
+  if(!data.nama){ alert('Nama layanan wajib diisi'); return; }
+  try{
+    if(id) await apiFetch(`/api/services/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    else await apiFetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    closeModal();
+    await loadData();
+  }catch(e){ alert(e.message); }
+}
+async function deleteService(id){
+  if(!confirm('Hapus layanan ini dari master data?')) return;
+  try{ await apiFetch(`/api/services/${id}`, { method:'DELETE' }); await loadData(); }
+  catch(e){ alert(e.message); }
+}
+
+/* ===================== INVOICES LIST ===================== */
+function renderInvoicesList(){
+  const sorted = [...state.invoices].sort((a,b)=> b.tanggalTerbit.localeCompare(a.tanggalTerbit));
+  const rows = sorted.map(inv=>{
+    const client = getClient(inv.clientId);
+    const { total } = getInvoiceTotal(inv);
+    const status = getInvoiceStatus(inv);
+    return `<tr onclick="goToPage('invoice-detail','${inv.id}')" style="cursor:pointer;">
+      <td class="mono">${inv.no}</td><td>${client?client.nama:'—'}</td><td>${formatDateID(inv.tanggalTerbit)}</td><td class="mono">${formatRupiah(total)}</td><td>${statusSeal(status)}</td></tr>`;
+  }).join('');
+  return `
+    <div class="topbar"><div><div class="page-eyebrow">Keuangan</div><h1 class="page-title">Invoice</h1><div class="page-sub">${state.invoices.length} invoice tercatat</div></div>
+      <button class="btn" onclick="goToPage('invoice-form', null)">+ Invoice Baru</button></div>
+    <div class="card">${ rows ? `<div class="table-scroll"><table><thead><tr><th>No. Invoice</th><th>Klien</th><th>Tanggal Terbit</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><div class="display">Belum ada invoice</div>Buat invoice pertama Anda.</div>` }</div>`;
+}
+
+/* ===================== SETTINGS (PROFIL USAHA) ===================== */
+function renderSettings(){
+  const s = state.settings || { namaUsaha:'', logoUrl:'' };
+  return `
+    <div class="topbar">
+      <div><div class="page-eyebrow">Pengaturan</div><h1 class="page-title">Profil Usaha</h1><div class="page-sub">Nama dan logo di sini otomatis dipakai di kepala invoice &amp; PDF</div></div>
+    </div>
+    <div class="card" style="max-width:520px;">
+      <div class="field"><label>Nama Usaha / WO</label><input id="f-nama-usaha" value="${s.namaUsaha||''}" placeholder="Nama Wedding Organizer Anda"></div>
+      <div class="field"><label>URL Logo</label><input id="f-logo-url" value="${s.logoUrl||''}" placeholder="https://... (link langsung ke gambar logo)" oninput="previewLogo()"></div>
+      <div class="field">
+        <label>Preview Logo</label>
+        <div id="logo-preview-box" style="width:90px; height:90px; border:1px dashed var(--gold-line); border-radius:var(--radius); display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--ivory-soft);">
+          ${ s.logoUrl ? `<img id="logo-preview-img" src="${s.logoUrl}" style="max-width:100%; max-height:100%;" onerror="this.style.display='none'; document.getElementById('logo-preview-fallback').style.display='block';">` : '' }
+          <span id="logo-preview-fallback" style="font-size:11px; color:var(--ink-soft); text-align:center; padding:8px; display:${s.logoUrl?'none':'block'};">Belum ada logo</span>
+        </div>
+      </div>
+      <div class="note">Masukkan link langsung ke file gambar (biasanya berakhiran .png/.jpg), bukan link ke halaman web. Contoh: hasil upload dari Imgur, Google Drive (mode "anyone with link" lalu pakai link unduh langsung), atau hosting gambar lain.</div>
+      <div class="modal-actions" style="margin-top:18px;"><button class="btn" onclick="saveSettings()">Simpan Profil</button></div>
+    </div>`;
+}
+function previewLogo(){
+  const url = document.getElementById('f-logo-url').value.trim();
+  const box = document.getElementById('logo-preview-box');
+  box.innerHTML = url
+    ? `<img src="${url}" style="max-width:100%; max-height:100%;" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<span style=\\'font-size:11px;color:var(--ink-soft);text-align:center;padding:8px;\\'>Gagal memuat gambar</span>');">`
+    : `<span style="font-size:11px; color:var(--ink-soft); text-align:center; padding:8px;">Belum ada logo</span>`;
+}
+async function saveSettings(){
+  const namaUsaha = document.getElementById('f-nama-usaha').value.trim();
+  const logoUrl = document.getElementById('f-logo-url').value.trim();
+  if(!namaUsaha){ alert('Nama usaha wajib diisi'); return; }
+  try{
+    await apiFetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ namaUsaha, logoUrl }) });
+    await loadData();
+    alert('Profil usaha tersimpan.');
+  }catch(e){ alert(e.message); }
+}
+
+/* ===================== INVOICE FORM ===================== */
+function renderInvoiceForm(editId){
+  const inv = editId ? state.invoices.find(i=>i.id===editId) : null;
+  const no = inv ? inv.no : `INV-${new Date().getFullYear()}-${String(state.invoices.length+1).padStart(3,'0')} (otomatis)`;
+  const items = inv ? inv.items : [];
+  if(state.clients.length===0){
+    return `<div class="topbar"><div><div class="page-eyebrow">Invoice Baru</div><h1 class="page-title">Buat Invoice</h1></div></div>
+      <div class="card empty"><div class="display">Belum ada klien</div>Tambahkan klien terlebih dahulu sebelum membuat invoice.
+      <div style="margin-top:14px;"><button class="btn" onclick="goToPage('clients')">Ke Halaman Klien</button></div></div>`;
+  }
+  const clientOptions = state.clients.map(c=>`<option value="${c.id}" ${inv&&inv.clientId===c.id?'selected':''}>${c.nama}</option>`).join('');
+  const serviceOptionsHTML = svcId => `<option value="custom">— Item custom —</option>` + state.services.map(s=>`<option value="${s.id}" ${svcId===s.id?'selected':''}>${s.nama}</option>`).join('');
+  const rowsHTML = (items.length?items:[{deskripsi:'',qty:1,harga:0}]).map(it=>{
+    const matchedService = state.services.find(s=>s.nama===it.deskripsi);
+    return `<tr>
+      <td style="width:26%"><select class="service-select" onchange="onServiceSelectChange(this)">${serviceOptionsHTML(matchedService?matchedService.id:null)}</select></td>
+      <td style="width:30%"><input class="desc-input" value="${it.deskripsi||''}" placeholder="Deskripsi item"></td>
+      <td style="width:12%"><input type="number" class="qty-input" min="0" value="${it.qty||1}" oninput="recalcRow(this)"></td>
+      <td style="width:18%"><input type="text" inputmode="numeric" class="harga-input" value="${formatNumberID(it.harga||0)}" oninput="formatRupiahInput(this); recalcRow(this)"></td>
+      <td style="width:16%" class="mono row-subtotal" data-value="${(it.qty||0)*(it.harga||0)}">${formatRupiah((it.qty||0)*(it.harga||0))}</td>
+      <td class="del-x" onclick="removeItemRow(this)">✕</td></tr>`;
+  }).join('');
+  const diskon = inv ? inv.diskon : 0;
+  const pajakPersen = inv ? inv.pajakPersen : 0;
+  const totals = inv ? getInvoiceTotal(inv) : { subtotal:0, pajak:0, total:0 };
+  return `
+    <div class="topbar"><div><div class="page-eyebrow">${editId?'Edit Invoice':'Invoice Baru'}</div><h1 class="page-title">${editId?'Edit Invoice':'Buat Invoice'}</h1><div class="page-sub">Pilih klien, tambahkan item, sistem hitung otomatis</div></div></div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="section-title">Info Klien &amp; Acara <div class="line"></div></div>
+      <div class="form-grid">
+        <div class="field"><label>Klien</label><select id="client-select">${clientOptions}</select></div>
+        <div class="field"><label>No. Invoice</label><input class="mono" value="${no}" readonly></div>
+        <div class="field"><label>Tanggal Terbit</label><input id="terbit-input" type="date" value="${inv?inv.tanggalTerbit:todayISO()}"></div>
+        <div class="field"><label>Jatuh Tempo</label><input id="due-date-input" type="date" value="${inv?inv.dueDate:''}"></div>
+      </div>
+      <div class="section-title">Item Layanan <div class="line"></div></div>
+      <div class="table-scroll">
+      <table class="item-table"><thead><tr><th>Pilih Layanan</th><th>Deskripsi</th><th>Qty</th><th>Harga Satuan</th><th>Subtotal</th><th></th></tr></thead>
+      <tbody id="items-tbody">${rowsHTML}</tbody></table>
+      </div>
+      <div class="add-item-row" onclick="addItemRow()">+ Tambah item</div>
+      <div class="totals">
+        <div class="totals-row"><span>Subtotal</span><span class="mono" id="subtotal-display">${formatRupiah(totals.subtotal)}</span></div>
+        <div class="totals-row"><span>Diskon (Rp)</span><input id="diskon-input" type="text" inputmode="numeric" value="${formatNumberID(diskon)}" oninput="formatRupiahInput(this); recalcInvoiceTotals()"></div>
+        <div class="totals-row"><span>Pajak (%)</span><input id="pajak-input" type="number" value="${pajakPersen}" oninput="recalcInvoiceTotals()"></div>
+        <div class="totals-row"><span>Nilai Pajak</span><span class="mono" id="pajak-display">${formatRupiah(totals.pajak)}</span></div>
+        <div class="totals-row grand"><span>Total</span><span id="total-display">${formatRupiah(totals.total)}</span></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn secondary" onclick="goToPage(${editId?`'invoice-detail','${editId}'`:`'invoices'`})">Batal</button>
+      <button class="btn ghost" onclick="saveInvoice('draft')">Simpan Draft</button>
+      <button class="btn" onclick="saveInvoice('terkirim')">Simpan &amp; Kirim ke Klien</button>
+    </div>`;
+}
+function addItemRow(){
+  const tbody = document.getElementById('items-tbody');
+  const serviceOptions = `<option value="custom">— Item custom —</option>` + state.services.map(s=>`<option value="${s.id}">${s.nama}</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="width:26%"><select class="service-select" onchange="onServiceSelectChange(this)">${serviceOptions}</select></td>
+    <td style="width:30%"><input class="desc-input" placeholder="Deskripsi item"></td>
+    <td style="width:12%"><input type="number" class="qty-input" min="0" value="1" oninput="recalcRow(this)"></td>
+    <td style="width:18%"><input type="text" inputmode="numeric" class="harga-input" value="" oninput="formatRupiahInput(this); recalcRow(this)"></td>
+    <td style="width:16%" class="mono row-subtotal" data-value="0">${formatRupiah(0)}</td>
+    <td class="del-x" onclick="removeItemRow(this)">✕</td>`;
+  tbody.appendChild(tr);
+}
+function removeItemRow(el){ el.closest('tr').remove(); recalcInvoiceTotals(); }
+function onServiceSelectChange(sel){
+  const row = sel.closest('tr');
+  if(sel.value==='custom'){ row.querySelector('.desc-input').value=''; row.querySelector('.harga-input').value=''; }
+  else{ const svc = state.services.find(s=>s.id===sel.value); if(svc){ row.querySelector('.desc-input').value = svc.nama; row.querySelector('.harga-input').value = formatNumberID(svc.harga); } }
+  recalcRow(row.querySelector('.qty-input'));
+}
+function recalcRow(el){
+  const row = el.closest('tr');
+  const qty = parseFloat(row.querySelector('.qty-input').value)||0;
+  const harga = parseRupiah(row.querySelector('.harga-input').value);
+  const subtotal = qty*harga;
+  const cell = row.querySelector('.row-subtotal');
+  cell.dataset.value = subtotal;
+  cell.textContent = formatRupiah(subtotal);
+  recalcInvoiceTotals();
+}
+function recalcInvoiceTotals(){
+  let subtotal = 0;
+  document.querySelectorAll('#items-tbody .row-subtotal').forEach(el=>subtotal += parseFloat(el.dataset.value)||0);
+  const diskon = parseRupiah(document.getElementById('diskon-input').value);
+  const pajakPersen = parseFloat(document.getElementById('pajak-input').value)||0;
+  const pajak = subtotal * pajakPersen / 100;
+  const total = subtotal - diskon + pajak;
+  document.getElementById('subtotal-display').textContent = formatRupiah(subtotal);
+  document.getElementById('pajak-display').textContent = formatRupiah(pajak);
+  document.getElementById('total-display').textContent = formatRupiah(total);
+}
+async function saveInvoice(mode){
+  const clientId = document.getElementById('client-select').value;
+  if(!clientId){ alert('Pilih klien terlebih dahulu'); return; }
+  const tanggalTerbit = document.getElementById('terbit-input').value || todayISO();
+  const dueDate = document.getElementById('due-date-input').value;
+  if(!dueDate){ alert('Isi tanggal jatuh tempo'); return; }
+  const items = [];
+  document.querySelectorAll('#items-tbody tr').forEach(row=>{
+    const deskripsi = row.querySelector('.desc-input').value.trim();
+    const qty = parseFloat(row.querySelector('.qty-input').value)||0;
+    const harga = parseRupiah(row.querySelector('.harga-input').value);
+    if(deskripsi && qty>0){ items.push({ deskripsi, qty, harga }); }
+  });
+  if(items.length===0){ alert('Tambahkan minimal satu item layanan'); return; }
+  const diskon = parseRupiah(document.getElementById('diskon-input').value);
+  const pajakPersen = parseFloat(document.getElementById('pajak-input').value)||0;
+  const payload = { clientId, tanggalTerbit, dueDate, sent: mode==='terkirim', diskon, pajakPersen, items };
+  const editId = state.editingInvoiceId;
+  try{
+    let targetId = editId;
+    if(editId){ await apiFetch(`/api/invoices/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }); }
+    else{ const created = await apiFetch('/api/invoices', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }); targetId = created.id; }
+    await loadData();
+    goToPage('invoice-detail', targetId);
+  }catch(e){ alert(e.message); }
+}
+
+/* ===================== INVOICE DETAIL ===================== */
+function renderInvoiceDetail(id){
+  const inv = state.invoices.find(i=>i.id===id);
+  if(!inv) return `<div class="empty"><div class="display">Invoice tidak ditemukan</div></div>`;
+  const client = getClient(inv.clientId);
+  const { subtotal, pajak, total } = getInvoiceTotal(inv);
+  const paid = getInvoicePaid(inv.id);
+  const remaining = total - paid;
+  const status = getInvoiceStatus(inv);
+  const itemRows = inv.items.map(it=>`<tr><td>${it.deskripsi}</td><td>${it.qty}</td><td class="mono">${it.harga.toLocaleString('id-ID')}</td><td class="mono">${formatRupiah(it.qty*it.harga)}</td></tr>`).join('');
+  const payments = state.payments.filter(p=>p.invoiceId===inv.id).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+  const paymentRows = payments.map(p=>`
+    <div class="tl-item"><div class="tl-dot"></div>
+      <div><div class="tl-title">${p.jenis}</div><div class="tl-sub">${formatDateID(p.tanggal)} · ${p.metode||'-'}</div></div>
+      <div class="tl-amount">${formatRupiah(p.jumlah)}</div></div>`).join('');
+  const pendingLine = remaining > 0 ? `
+    <div class="tl-item pending"><div class="tl-dot"></div>
+      <div><div class="tl-title">Sisa Tagihan</div><div class="tl-sub">Jatuh tempo ${formatDateID(inv.dueDate)}</div></div>
+      <div class="tl-amount">${formatRupiah(remaining)}</div></div>` : '';
+  const waxLabel = status==='lunas' ? 'Lunas' : status==='dp' ? 'DP<br>Terbayar' : status==='jatuh_tempo' ? 'Jatuh<br>Tempo' : status==='terkirim' ? 'Menunggu<br>Bayar' : 'Draft';
+  return `
+    <div class="topbar">
+      <div><div class="page-eyebrow">Detail Invoice</div><h1 class="page-title">${inv.no}</h1><div class="page-sub">${client?client.nama:'—'} — dibuat ${formatDateID(inv.tanggalTerbit)}</div></div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn ghost" onclick="goToPage('invoices')">← Daftar Invoice</button>
+        <button class="btn ghost" onclick="goToPage('invoice-form','${inv.id}')">Edit</button>
+        <a class="btn ghost" href="/api/invoices/${inv.id}/pdf" target="_blank">Unduh PDF</a>
+        ${ status!=='lunas' ? `<button class="btn secondary" onclick="openPaymentModal('${inv.id}')">Catat Pembayaran</button>` : '' }
+        <button class="btn danger" onclick="deleteInvoice('${inv.id}')">Hapus</button>
+      </div>
+    </div>
+    <div class="paper" style="margin-bottom:22px;">
+      <div class="paper-head">
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${ state.settings && state.settings.logoUrl ? `<img src="${state.settings.logoUrl}" style="width:44px; height:44px; object-fit:contain;" onerror="this.style.display='none';">` : '' }
+          <div><div class="display" style="font-size:22px;">${(state.settings && state.settings.namaUsaha) || 'Nama Usaha Anda'}</div><div class="invoice-no">${inv.no} · diterbitkan ${formatDateID(inv.tanggalTerbit)}</div></div>
+        </div>
+        <div class="wax">${waxLabel}</div>
+      </div>
+      <div class="paper-cols">
+        <div><div class="paper-label">Ditagihkan kepada</div><div class="paper-val">${client?client.nama:'—'}</div>
+          <div class="paper-label" style="margin-top:12px;">Tanggal Acara</div><div class="paper-val">${client?formatDateID(client.tanggalAcara)+' — '+(client.venue||'-'):'—'}</div></div>
+        <div><div class="paper-label">Jatuh Tempo</div><div class="paper-val">${formatDateID(inv.dueDate)}</div>
+          <div class="paper-label" style="margin-top:12px;">Kontak Klien</div><div class="paper-val">${client?(client.hp||'-'):'—'}</div></div>
+      </div>
+      <div class="table-scroll"><table><thead><tr><th>Deskripsi</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead><tbody>${itemRows}</tbody></table></div>
+      <div class="totals">
+        <div class="totals-row"><span>Subtotal</span><span class="mono">${formatRupiah(subtotal)}</span></div>
+        ${ inv.diskon ? `<div class="totals-row"><span>Diskon</span><span class="mono">– ${formatRupiah(inv.diskon)}</span></div>` : '' }
+        ${ inv.pajakPersen ? `<div class="totals-row"><span>Pajak (${inv.pajakPersen}%)</span><span class="mono">${formatRupiah(pajak)}</span></div>` : '' }
+        <div class="totals-row grand"><span>Total</span><span>${formatRupiah(total)}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Riwayat Pembayaran <div class="line"></div></div>
+      <div class="timeline">${ payments.length ? paymentRows : '' }${ pendingLine }${ !payments.length && remaining<=0 ? '<div class="empty">Belum ada catatan pembayaran.</div>' : '' }</div>
+      <div class="note">${ remaining>0 ? `Sisa tagihan ${formatRupiah(remaining)} dari total ${formatRupiah(total)}.` : `Invoice ini sudah lunas.` }</div>
+    </div>`;
+}
+async function deleteInvoice(id){
+  if(!confirm('Hapus invoice ini beserta riwayat pembayarannya?')) return;
+  try{ await apiFetch(`/api/invoices/${id}`, { method:'DELETE' }); await loadData(); goToPage('invoices'); }
+  catch(e){ alert(e.message); }
+}
+
+/* ===================== PAYMENT MODAL ===================== */
+function openPaymentModal(invId){
+  const inv = state.invoices.find(i=>i.id===invId);
+  const { total } = getInvoiceTotal(inv);
+  const remaining = total - getInvoicePaid(invId);
+  document.getElementById('modal-content').innerHTML = `
+    <h3>Catat Pembayaran</h3>
+    <div class="note" style="margin:0 0 16px;">Sisa tagihan saat ini: <strong>${formatRupiah(remaining)}</strong></div>
+    <div class="field"><label>Tanggal Bayar</label><input id="f-tanggal" type="date" value="${todayISO()}"></div>
+    <div class="field"><label>Jumlah (Rp)</label><input id="f-jumlah" type="text" inputmode="numeric" value="${formatNumberID(remaining>0?remaining:0)}" oninput="formatRupiahInput(this)"></div>
+    <div class="field"><label>Jenis Pembayaran</label><select id="f-jenis"><option>DP</option><option>Cicilan</option><option>Pelunasan</option></select></div>
+    <div class="field"><label>Metode</label><input id="f-metode" value="Transfer Bank" placeholder="Transfer BCA / Tunai / dll"></div>
+    <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Batal</button><button class="btn" onclick="savePayment('${invId}')">Simpan</button></div>`;
+  openModal();
+}
+async function savePayment(invId){
+  const jumlah = parseRupiah(document.getElementById('f-jumlah').value);
+  if(jumlah<=0){ alert('Jumlah pembayaran harus lebih dari 0'); return; }
+  const data = { tanggal: document.getElementById('f-tanggal').value || todayISO(), jumlah, jenis: document.getElementById('f-jenis').value, metode: document.getElementById('f-metode').value.trim() };
+  try{
+    await apiFetch(`/api/invoices/${invId}/payments`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    closeModal();
+    await loadData();
+    goToPage('invoice-detail', invId);
+  }catch(e){ alert(e.message); }
+}
+
+/* ===================== MODAL UTIL ===================== */
+function openModal(){ document.getElementById('modal-overlay').classList.add('active'); }
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('active'); }
+document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.target.id==='modal-overlay') closeModal(); });
+
+/* ===================== INIT ===================== */
+loadData();
+</script>
+</body>
+</html>
